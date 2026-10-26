@@ -8,6 +8,7 @@ import java.util.regex.Pattern
 data class ExpenseRecord(
     val amount: Double,
     val merchant: String,
+    val accountName: String,
     val rawText: String,
     val timestamp: Long = System.currentTimeMillis()
 ) {
@@ -18,29 +19,65 @@ data class ExpenseRecord(
 }
 
 object TransactionParser {
-    // ตรวจจับข้อความแจ้งเตือนการใช้จ่ายภาษาไทยของ TrueMoney
+
+    val supportedAppAccounts = mapOf(
+        "th.co.truemoney.wallet" to "TrueMoney",
+        "com.kasikorn.retail.mbanking.wap" to "K PLUS",
+        "com.scb.phone" to "SCB EASY",
+        "ktbcs.netbank" to "Krungthai NEXT",
+        "com.bbl.mobilebanking" to "Bangkok Bank",
+        "com.krungsri.kma" to "KMA (Krungsri)",
+        "com.TTB.touch" to "ttb touch",
+        "com.TMB.touch.production" to "ttb touch",
+        "com.gsb.mymo" to "MyMo (GSB)",
+        "com.kbtg.make" to "MAKE by KBank",
+        "com.kasikorn.linebk" to "LINE BK",
+        "th.co.baac.amobileplus" to "BAAC A-Mobile",
+        "com.uob.mightyth" to "UOB TMRW",
+        "com.cimbthai.digitalbanking" to "CIMB Thai",
+        "com.lhbank.mbanking" to "LHB You",
+        "com.ghbank.ghball" to "GHB ALL GEN",
+        "com.autolog.truemoneymm" to "Test Account"
+    )
+
     private val expenseKeywords = listOf(
-        "ชำระเงิน", "จ่ายเงิน", "โอนเงิน", "หักเงิน", "สำเร็จ", "รายการใช้จ่าย", "บาท", "THB"
+        "เงินออก", "ถอน/โอน", "โอนเงิน", "ชำระเงิน", "จ่ายเงิน", "หักเงิน",
+        "หักบัญชี", "สแกนจ่าย", "จ่ายบิล", "ถอนเงิน", "รายการใช้จ่าย",
+        "ชำระค่าสินค้า", "ยอดใช้จ่าย", "สำเร็จ", "บาท", "บ.", "THB"
     )
 
-    // ยกเว้นแจ้งเตือนที่เป็นเงินเข้าหรือโปรโมชันโฆษณา
     private val ignoreKeywords = listOf(
-        "ได้รับเงิน", "เงินเข้า", "เติมเงินสำเร็จ", "รับเงินคืน", "โปรโมชัน", "คูปอง", "ส่วนลดพิเศษ"
+        "เงินเข้า", "ได้รับเงิน", "รับเงินโอน", "เติมเงินสำเร็จ", "รับเงินคืน",
+        "ฝากเงิน", "โปรโมชัน", "โปรโมชั่น", "คูปอง", "ส่วนลดพิเศษ", "สินเชื่อ",
+        "รหัส OTP", "OTP ของคุณ"
     )
 
-    // Regex ดึงตัวเลขจำนวนเงิน เช่น 45.00 บาท, ฿1,200.50, จำนวน 150 บาท
     private val amountPatterns = listOf(
-        Pattern.compile("([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)\s*(?:บาท|THB)"),
-        Pattern.compile("(?:จำนวน|ยอดชำระ|ชำระเงิน|โอนเงิน|฿)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)")
+        Pattern.compile("""(?:เงินออก|ถอน/โอน|โอนเงิน|ชำระเงิน|จ่ายเงิน|จำนวน|ยอดเงิน|ยอดชำระ)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)\s*(?:บาท|บ\.|THB)?"""),
+        Pattern.compile("""([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)\s*(?:บาท|บ\.|THB)"""),
+        Pattern.compile("""(?:฿|THB)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?)""")
     )
 
-    // Regex ดึงชื่อร้านค้าหรือผู้รับ
     private val merchantPatterns = listOf(
-        Pattern.compile("(?:ให้แก่|ไปยัง|ที่ร้าน|ร้านค้า|ผู้รับ)\s*([^\n\r(จำนวน)(ยอด)]+)"),
-        Pattern.compile("ชำระเงินที่\s*([^\n\r]+)")
+        Pattern.compile("""(?:ไปยัง|ให้แก่|ที่ร้าน|ร้านค้า|ผู้รับ|เข้าบัญชี|จ่ายบิล)\s*([^\n\r(จำนวน)(ยอด)(คงเหลือ)]+)"""),
+        Pattern.compile("""ชำระเงินที่\s*([^\n\r]+)""")
     )
 
-    fun parse(title: String, text: String): ExpenseRecord? {
+    fun resolveAccountName(packageName: String, title: String, text: String): String {
+        val combined = "$title $text"
+        if (combined.contains("K PLUS") || combined.contains("กสิกร") || combined.contains("KBank")) return "K PLUS"
+        if (combined.contains("SCB") || combined.contains("ไทยพาณิชย์")) return "SCB EASY"
+        if (combined.contains("Krungthai") || combined.contains("กรุงไทย")) return "Krungthai NEXT"
+        if (combined.contains("BBL") || combined.contains("กรุงเทพ")) return "Bangkok Bank"
+        if (combined.contains("KMA") || combined.contains("กรุงศรี")) return "KMA (Krungsri)"
+        if (combined.contains("ttb") || combined.contains("ทีทีบี")) return "ttb touch"
+        if (combined.contains("MyMo") || combined.contains("ออมสิน")) return "MyMo (GSB)"
+        if (combined.contains("TrueMoney") || combined.contains("ทรูมันนี่")) return "TrueMoney"
+
+        return supportedAppAccounts[packageName] ?: "Bank/Wallet"
+    }
+
+    fun parse(packageName: String, title: String, text: String): ExpenseRecord? {
         val combined = "$title $text".trim()
 
         if (ignoreKeywords.any { combined.contains(it, ignoreCase = true) }) {
@@ -51,9 +88,11 @@ object TransactionParser {
             return null
         }
 
+        val textBeforeBalance = combined.split("คงเหลือ", "ยอดเงินคงเหลือ", "ใช้ได้")[0]
+
         var extractedAmount: Double? = null
         for (pattern in amountPatterns) {
-            val matcher = pattern.matcher(combined)
+            val matcher = pattern.matcher(textBeforeBalance)
             if (matcher.find()) {
                 val rawNumber = matcher.group(1)?.replace(",", "")
                 extractedAmount = rawNumber?.toDoubleOrNull()
@@ -63,9 +102,11 @@ object TransactionParser {
 
         if (extractedAmount == null) return null
 
-        var extractedMerchant = "TrueMoney Expense"
+        val accountName = resolveAccountName(packageName, title, text)
+
+        var extractedMerchant = "จ่ายผ่าน $accountName"
         for (pattern in merchantPatterns) {
-            val matcher = pattern.matcher(combined)
+            val matcher = pattern.matcher(textBeforeBalance)
             if (matcher.find()) {
                 val found = matcher.group(1)?.trim()
                 if (!found.isNullOrEmpty()) {
@@ -78,6 +119,7 @@ object TransactionParser {
         return ExpenseRecord(
             amount = extractedAmount,
             merchant = extractedMerchant,
+            accountName = accountName,
             rawText = combined
         )
     }
