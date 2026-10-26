@@ -13,29 +13,31 @@ import android.os.Looper
 
 class TrueMoneyNotificationService : NotificationListenerService() {
 
-    private val targetPackages = setOf(
-        "th.co.truemoney.wallet",
-        "com.autolog.truemoneymm" // อนุญาตให้ทดสอบจากปุ่มจำลองในแอปตัวเองได้
-    )
-
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
         if (sbn == null) return
 
         val pkg = sbn.packageName
-        if (!targetPackages.contains(pkg)) return
-
         val extras = sbn.notification.extras
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: text
 
-        val record = TransactionParser.parse(title, bigText) ?: return
+        val isSupportedBankOrWallet = TransactionParser.supportedAppAccounts.containsKey(pkg)
+        val isLineBankOfficial = (pkg == "jp.naver.line.android") && (
+            title.contains("SCB Connect", ignoreCase = true) ||
+            title.contains("KBank Live", ignoreCase = true) ||
+            title.contains("Krungthai Connext", ignoreCase = true) ||
+            title.contains("LINE BK", ignoreCase = true) ||
+            title.contains("GSB NOW", ignoreCase = true) ||
+            title.contains("ttb", ignoreCase = true)
+        )
 
-        // 1. บันทึกลงฐานข้อมูลในแอป (สำหรับดูย้อนหลังหรือ Export .xls)
+        if (!isSupportedBankOrWallet && !isLineBankOfficial) return
+
+        val record = TransactionParser.parse(pkg, title, bigText) ?: return
+
         TransactionStore.saveRecord(applicationContext, record)
-
-        // 2. คัดลอกยอดเงินลง Clipboard และตั้งค่าเตรียม Auto-fill
         TransactionStore.pendingAutoFillRecord = record
 
         Handler(Looper.getMainLooper()).post {
@@ -43,12 +45,11 @@ class TrueMoneyNotificationService : NotificationListenerService() {
             clipboard.setPrimaryClip(ClipData.newPlainText("amount", record.amount.toString()))
             Toast.makeText(
                 applicationContext,
-                "ตรวจพบการจ่าย TrueMoney: ${record.amount} บาท (${record.merchant})",
+                "[${record.accountName}] จ่าย ${record.amount} บาท (${record.merchant})",
                 Toast.LENGTH_LONG
             ).show()
         }
 
-        // 3. เปิดแอป Money Manager อัตโนมัติ (ถ้าเปิดโหมด Auto Launch ไว้)
         if (TransactionStore.isAutoLaunchEnabled(applicationContext)) {
             launchMoneyManager()
         }
