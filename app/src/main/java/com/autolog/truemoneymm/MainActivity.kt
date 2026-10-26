@@ -44,14 +44,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnSimulate.setOnClickListener {
-            sendTestNotification()
+            sendTestNotification(
+                title = "K PLUS",
+                message = "รายการเงินออก บัญชี xxx-x-x1234-x จำนวน 120.00 บาท ไปยัง ร้านกาแฟอเมซอน คงเหลือ 5,400.00 บาท"
+            )
         }
 
         btnExportXls.setOnClickListener {
             val file = TransactionStore.exportForMoneyManagerXls(this)
             Toast.makeText(
                 this,
-                "สร้างไฟล์สำเร็จ: ${file.absolutePath}\nนำไป Import ใน Money Manager ได้เลย!",
+                "สร้างไฟล์สำเร็จ: ${file.absolutePath}",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -74,19 +77,19 @@ class MainActivity : AppCompatActivity() {
         if (records.isEmpty()) {
             tvHistory.text = "ยังไม่มีรายการ"
         } else {
-            tvHistory.text = records.joinToString("\n\n") {
-                "• ${it.getFormattedDate()} | ${it.amount} บาท | ${it.merchant}"
+            tvHistory.text = records.joinToString(separator = "\n\n") {
+                "• [${it.accountName}] ${it.getFormattedDate()} | ${it.amount} บาท | ${it.merchant}"
             }
         }
     }
 
-    private fun sendTestNotification() {
+    private fun sendTestNotification(title: String, message: String) {
         val channelId = "test_tmn_channel"
         val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 channelId,
-                "Test TrueMoney",
+                "Test Financial Notification",
                 NotificationManager.IMPORTANCE_HIGH
             )
             nm.createNotificationChannel(channel)
@@ -94,12 +97,12 @@ class MainActivity : AppCompatActivity() {
 
         val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setContentTitle("TrueMoney")
-            .setContentText("ชำระเงินสำเร็จ จำนวน 65.00 บาท ให้แก่ 7-Eleven")
+            .setContentTitle(title)
+            .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
-        nm.notify(1001, notification)
+        nm.notify((System.currentTimeMillis() % 10000).toInt(), notification)
         refreshHistory()
     }
 }
