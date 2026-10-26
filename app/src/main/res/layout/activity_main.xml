@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="TrueMoney -> Money Manager"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:paddingBottom="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="ดักจับแจ้งเตือนการใช้จ่าย TrueMoney ภาษาไทย แล้วส่งเข้าแอป Money Manager (หมูแดง)"
+            android:paddingBottom="16dp" />
+
+        <Button
+            android:id="@+id/btnGrantNotification"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="1. เปิดสิทธิ์อ่านแจ้งเตือน (Notification Access)" />
+
+        <Button
+            android:id="@+id/btnGrantAccessibility"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="2. เปิดสิทธิ์กรอกข้อมูลอัตโนมัติ (Accessibility)" />
+
+        <Switch
+            android:id="@+id/switchAutoLaunch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:checked="true"
+            android:text="เปิดแอป Money Manager ทันทีเมื่อจ่ายเงิน" />
+
+        <Button
+            android:id="@+id/btnSimulate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="จำลองแจ้งเตือนจ่ายเงิน TrueMoney (ทดสอบ)" />
+
+        <Button
+            android:id="@+id/btnExportXls"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="ส่งออกไฟล์ .xls เข้าแอป Money Manager ทีเดียว" />
+
+        <Button
+            android:id="@+id/btnClearHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="ล้างประวัติที่ดักจับไว้" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="รายการ TrueMoney ที่ดักจับได้ล่าสุด:"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/tvHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="ยังไม่มีรายการ"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+</ScrollView>

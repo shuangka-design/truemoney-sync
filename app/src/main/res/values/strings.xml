@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">TMN to MoneyManager</string>
+    <string name="accessibility_desc">ใช้สำหรับช่วยกรอกยอดเงินจาก TrueMoney ลงในแอป Money Manager อัตโนมัติ รวมถึงสร้างไฟล์ Excel (.xls) สำหรับนำเข้าทีเดียว</string>
+</resources>
