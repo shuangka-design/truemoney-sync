@@ -7,9 +7,8 @@ import java.io.File
 
 object TransactionStore {
     private const val PREF_NAME = "tmn_mm_prefs"
-    private const val KEY_HISTORY = "tx_history"
+    private const val KEY_HISTORY = "tx_history_v2"
     private const val KEY_AUTO_LAUNCH = "auto_launch_mm"
-    private const val KEY_ACCOUNT_NAME = "mm_account_name"
     private const val KEY_DEFAULT_CATEGORY = "mm_default_category"
 
     @Volatile
@@ -21,6 +20,7 @@ object TransactionStore {
         val obj = JSONObject().apply {
             put("amount", record.amount)
             put("merchant", record.merchant)
+            put("accountName", record.accountName)
             put("rawText", record.rawText)
             put("timestamp", record.timestamp)
         }
@@ -38,6 +38,7 @@ object TransactionStore {
                 ExpenseRecord(
                     amount = o.getDouble("amount"),
                     merchant = o.getString("merchant"),
+                    accountName = o.optString("accountName", "TrueMoney"),
                     rawText = o.getString("rawText"),
                     timestamp = o.getLong("timestamp")
                 )
@@ -61,41 +62,29 @@ object TransactionStore {
             .edit().putBoolean(KEY_AUTO_LAUNCH, enabled).apply()
     }
 
-    fun getAccountName(context: Context): String {
-        return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
-            .getString(KEY_ACCOUNT_NAME, "TrueMoney") ?: "TrueMoney"
-    }
-
     fun getCategoryName(context: Context): String {
         return context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
             .getString(KEY_DEFAULT_CATEGORY, "อาหาร") ?: "อาหาร"
     }
 
-    /**
-     * ส่งออกไฟล์ .xls (Tab-Separated) ตามโครงสร้างมาตรฐานของแอป Money Manager (Realbyte)
-     * สามารถกด Import ในเมนู Backup/Restore -> Import Excel File ได้ทันที
-     */
     fun exportForMoneyManagerXls(context: Context): File {
         val records = getHistory(context)
-        val account = getAccountName(context)
         val category = getCategoryName(context)
+        val tab = "\t"
+        val nl = "\n"
 
         val sb = StringBuilder()
-        // Header มาตรฐานของแอป Money Manager (Realbyte)
-        sb.append("Date	Account	Category	Subcategory	Note	THB	Income/Expense	Description	Amount	Currency
-")
+        sb.append("Date${tab}Account${tab}Category${tab}Subcategory${tab}Note${tab}THB${tab}Income/Expense${tab}Description${tab}Amount${tab}Currency${nl}")
 
         for (r in records) {
             val dateStr = r.getFormattedDate()
-            val cleanNote = r.merchant.replace("	", " ").replace("
-", " ")
-            val cleanDesc = r.rawText.replace("	", " ").replace("
-", " ")
-            sb.append("$dateStr	$account	$category		$cleanNote	${r.amount}	Expense	$cleanDesc	${r.amount}	THB
-")
+            val cleanAccount = r.accountName.replace('\t', ' ').replace('\n', ' ')
+            val cleanNote = r.merchant.replace('\t', ' ').replace('\n', ' ')
+            val cleanDesc = r.rawText.replace('\t', ' ').replace('\n', ' ')
+            sb.append("${dateStr}${tab}${cleanAccount}${tab}${category}${tab}${tab}${cleanNote}${tab}${r.amount}${tab}Expense${tab}${cleanDesc}${tab}${r.amount}${tab}THB${nl}")
         }
 
-        val outFile = File(context.getExternalFilesDir(null), "TrueMoney_MoneyManager_Import.xls")
+        val outFile = File(context.getExternalFilesDir(null), "Bank_TrueMoney_MoneyManager_Import.xls")
         outFile.writeText(sb.toString(), Charsets.UTF_8)
         return outFile
     }
