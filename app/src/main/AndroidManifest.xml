@@ -6,17 +6,6 @@
     <queries>
         <package android:name="com.realbyteapps.moneymanagerfree" />
         <package android:name="com.realbyteapps.moneymanager" />
-        <package android:name="th.co.truemoney.wallet" />
-        <package android:name="com.kasikorn.retail.mbanking.wap" />
-        <package android:name="com.scb.phone" />
-        <package android:name="ktbcs.netbank" />
-        <package android:name="com.bbl.mobilebanking" />
-        <package android:name="com.krungsri.kma" />
-        <package android:name="com.TTB.touch" />
-        <package android:name="com.TMB.touch.production" />
-        <package android:name="com.gsb.mymo" />
-        <package android:name="com.kbtg.make" />
-        <package android:name="com.kasikorn.linebk" />
     </queries>
 
     <application
@@ -34,6 +23,7 @@
             </intent-filter>
         </activity>
 
+        <!-- ใช้เฉพาะ Notification Listener ซึ่งแอปธนาคารทุกค่ายอนุญาต 100% ไม่โดนบล็อก -->
         <service
             android:name=".TrueMoneyNotificationService"
             android:label="Bank and TrueMoney Listener"
@@ -44,19 +34,5 @@
             </intent-filter>
         </service>
 
-        <service
-            android:name=".MoneyManagerAutoFillService"
-            android:label="Money Manager Auto-Fill Helper"
-            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.accessibilityservice.AccessibilityService" />
-            </intent-filter>
-            <meta-data
-                android:name="android.accessibilityservice"
-                android:resource="@xml/accessibility_service_config" />
-        </service>
-
     </application>
 </manifest>
-
