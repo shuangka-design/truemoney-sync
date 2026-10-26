@@ -11,7 +11,6 @@ class MoneyManagerAutoFillService : AccessibilityService() {
         val pending = TransactionStore.pendingAutoFillRecord ?: return
         val rootNode = rootInActiveWindow ?: return
 
-        // ค้นหาปุ่ม + (Floating Action Button) ในหน้าแรกของแอป Money Manager เพื่อกดเพิ่มรายการ
         val addButtons = rootNode.findAccessibilityNodeInfosByViewId(
             "com.realbyteapps.moneymanagerfree:id/fab_add"
         )
@@ -20,10 +19,9 @@ class MoneyManagerAutoFillService : AccessibilityService() {
             return
         }
 
-        // เมื่อเข้ามาในหน้าเพิ่มรายการธุรกรรม ลองหาช่อง Note / Memo เพื่อกรอกชื่อร้านค้าและจำนวนเงิน
-        fillTextIfFound(rootNode, pending.merchant)
+        val noteContent = "[${pending.accountName}] ${pending.merchant}"
+        fillTextIfFound(rootNode, noteContent)
 
-        // เคลียร์สถานะเมื่อส่งค่าเสร็จสิ้น เพื่อไม่ให้กรอกซ้ำ
         TransactionStore.pendingAutoFillRecord = null
     }
 
