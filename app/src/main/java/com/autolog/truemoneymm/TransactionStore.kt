@@ -1,6 +1,7 @@
 package com.autolog.truemoneymm
 
 import android.content.Context
+import android.os.Environment
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
@@ -84,7 +85,13 @@ object TransactionStore {
             sb.append("${dateStr}${tab}${cleanAccount}${tab}${category}${tab}${tab}${cleanNote}${tab}${r.amount}${tab}Expense${tab}${cleanDesc}${tab}${r.amount}${tab}THB${nl}")
         }
 
-        val outFile = File(context.getExternalFilesDir(null), "Bank_TrueMoney_MoneyManager_Import.xls")
+        // บันทึกลงโฟลเดอร์ Downloads ของมือถือโดยตรง เพื่อให้หาไฟล์เจอง่ายที่สุด
+        val downloadDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        if (!downloadDir.exists()) {
+            downloadDir.mkdirs()
+        }
+        val fileName = "MoneyManager_Import_${System.currentTimeMillis() / 1000}.xls"
+        val outFile = File(downloadDir, fileName)
         outFile.writeText(sb.toString(), Charsets.UTF_8)
         return outFile
     }
