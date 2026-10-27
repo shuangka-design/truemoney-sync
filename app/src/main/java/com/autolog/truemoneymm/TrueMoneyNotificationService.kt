@@ -22,20 +22,13 @@ class TrueMoneyNotificationService : NotificationListenerService() {
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
         val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: text
+        val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString() ?: ""
 
-        val isSupportedBankOrWallet = TransactionParser.supportedAppAccounts.containsKey(pkg)
-        val isLineBankOfficial = (pkg == "jp.naver.line.android") && (
-            title.contains("SCB Connect", ignoreCase = true) ||
-            title.contains("KBank Live", ignoreCase = true) ||
-            title.contains("Krungthai Connext", ignoreCase = true) ||
-            title.contains("LINE BK", ignoreCase = true) ||
-            title.contains("GSB NOW", ignoreCase = true) ||
-            title.contains("ttb", ignoreCase = true)
-        )
+        val fullMessage = "$bigText $subText".trim()
 
-        if (!isSupportedBankOrWallet && !isLineBankOfficial) return
+        if (!TransactionParser.isFinancialPackageOrTitle(pkg, title, fullMessage)) return
 
-        val record = TransactionParser.parse(pkg, title, bigText) ?: return
+        val record = TransactionParser.parse(pkg, title, fullMessage) ?: return
 
         TransactionStore.saveRecord(applicationContext, record)
         TransactionStore.pendingAutoFillRecord = record
@@ -45,7 +38,7 @@ class TrueMoneyNotificationService : NotificationListenerService() {
             clipboard.setPrimaryClip(ClipData.newPlainText("amount", record.amount.toString()))
             Toast.makeText(
                 applicationContext,
-                "[${record.accountName}] จ่าย ${record.amount} บาท (${record.merchant})",
+                "[${record.accountName}] จ่าย ${record.amount} บาท (คัดลอกยอดเงินแล้ว)",
                 Toast.LENGTH_LONG
             ).show()
         }
